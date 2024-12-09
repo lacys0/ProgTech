@@ -2,17 +2,46 @@ package org.progTech;
 
 import java.util.Scanner;
 
-public class Connect4Game {
+public class Connect4Manager {
     private static final int ROWS = 6;
     private static final int COLS = 7;
     private static final char PLAYER_ONE_SYMBOL = 'X';
     private static final char PLAYER_TWO_SYMBOL = 'O';
 
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        DatabaseConnection dbConnection = new DatabaseConnection();
+    private Scanner scanner;
+    private DatabaseConnection dbConnection;
 
-        System.out.println("Üdvözöllek a Connect 4 játékban!");
+    // Constructor with Dependency Injection
+    public Connect4Manager(DatabaseConnection dbConnection) {
+        this.scanner = new Scanner(System.in);
+        this.dbConnection = dbConnection;
+    }
+
+    public void fomenu() {
+        System.out.println("Entering fomenu ...");
+
+        while (true) {
+            System.out.println("=====Connect 4=====");
+            System.out.println("1. Top játékosok");
+            System.out.println("2. Játék kezdése");
+            System.out.println("Kérem válasszon az alábbi menüpontok közül");
+
+            String choice = scanner.nextLine();
+
+            if (choice.equals("1")) {
+                System.out.println("Top Játékosok ...");
+                dbConnection.getTopPlayers(4);
+            } else if (choice.equals("2")) {
+                System.out.println("Játék kezdése ...");
+                startGame();
+                break;
+            } else {
+                System.out.println("");
+            }
+        }
+    }
+
+    public void startGame() {
         System.out.print("Játékos 1 neve: ");
         String playerOneName = scanner.nextLine();
         System.out.print("Játékos 2 neve: ");
@@ -33,7 +62,7 @@ public class Connect4Game {
                 break;
             }
 
-            int column = getPlayerMove(scanner, currentPlayerName, currentPlayerSymbol);
+            int column = getPlayerMove(currentPlayerName, currentPlayerSymbol);
             String result = board.dropPiece(column, currentPlayerSymbol);
 
             if (!result.equals("OK")) {
@@ -44,7 +73,7 @@ public class Connect4Game {
             if (board.checkWin(currentPlayerSymbol)) {
                 board.printBoard();
                 System.out.println("Gratulálok! " + currentPlayerName + " nyert!");
-                dbConnection.saveWinner(currentPlayerName);
+                dbConnection.saveWinner(currentPlayerName); // Uses the injected instance
                 gameRunning = false;
             } else {
                 // Switch to the other player
@@ -62,8 +91,7 @@ public class Connect4Game {
         scanner.close();
     }
 
-    // Changed visibility to public to make it accessible from tests
-    public static int getPlayerMove(Scanner scanner, String playerName, char playerSymbol) {
+    private int getPlayerMove(String playerName, char playerSymbol) {
         while (true) {
             System.out.println(playerName + " (" + playerSymbol + "), válassz oszlopot (0-" + (COLS - 1) + "): ");
             try {

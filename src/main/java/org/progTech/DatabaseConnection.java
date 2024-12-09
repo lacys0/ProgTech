@@ -12,14 +12,14 @@ public class DatabaseConnection {
     public Connection getConnection() {
         String databaseName = "gameboard";
         String databaseUser = "root";
-        String databasePassword = ""; // Replace with your MySQL password
+        String databasePassword = "";
         String url = "jdbc:mysql://localhost:3306/" + databaseName;
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             databaseLink = DriverManager.getConnection(url, databaseUser, databasePassword);
         } catch (Exception e) {
-            System.out.println("Database connection failed: " + e.getMessage());
+            System.out.println("Az adatbázishoz való csatlakozás sikertelen: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -29,7 +29,7 @@ public class DatabaseConnection {
     public void saveWinner(String winnerName) {
         try (Connection connection = getConnection()) {
             if (connection == null) {
-                System.out.println("No connection to the database.");
+                System.out.println("Nincs kapcsolat az adatbázis között.");
                 return;
             }
 
@@ -56,10 +56,39 @@ public class DatabaseConnection {
                 preparedStatement.executeUpdate();
             }
 
-            System.out.println("Winner saved successfully!");
+            System.out.println("A játék nyertese sikeresen elmentve!");
         } catch (Exception e) {
-            System.out.println("Failed to save winner: " + e.getMessage());
+            System.out.println("Sikertelen mentés a játék nyerteséről: " + e.getMessage());
             e.printStackTrace();
         }
     }
+
+    public void getTopPlayers(int topN) {
+        try (Connection connection = getConnection()) {
+            if (connection == null) {
+                System.out.println("Nincs kapcsolat az adatbázis között");
+                return;
+            }
+
+            // Query to get top players sorted by wins in descending order
+            String query = "SELECT nev, nyertjatek FROM jatekosok ORDER BY nyertjatek DESC LIMIT ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, topN);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            System.out.println("Top " + topN + " játékosok:");
+            System.out.println("----------------------");
+            while (resultSet.next()) {
+                String playerName = resultSet.getString("nev");
+                int wins = resultSet.getInt("nyertjatek");
+                System.out.println(playerName + " - " + wins + " nyert játékok");
+            }
+            System.out.println("----------------------");
+
+        } catch (Exception e) {
+            System.out.println("Hiba a top játékosok listájának betöltése közben: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }
